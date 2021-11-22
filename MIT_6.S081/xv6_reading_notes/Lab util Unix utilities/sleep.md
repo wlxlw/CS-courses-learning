@@ -7,7 +7,7 @@ sleep系统调用的定义为int sleep(int)           ( /user/user.h  中记录�
 3. 使用系统调用sleep
 4. main函数调用exit()来结束程序
 
-**测试user/sleep.c **：
+**测试user/sleep.c**：
 
 1. 修改Makefile
 ```bash
