@@ -43,9 +43,11 @@
 
 **实现：** 
 
- 1. ：阅读ls.c，学习怎么读取目录的内容
+ 1. 阅读ls.c，学习怎么读取目录的内容
 
- 2.  ```
+ 2. 伪代码
+
+     ```
     dfs(path, filename)
       遍历path下每一个(文件/目录)：
         如果是目录：
@@ -56,4 +58,4 @@
 
 **参考**
 
-dirent结构体的相关解释https://pdos.csail.mit.edu/6.828/2012/lec/l-fs.txt
+[dirent结构体的相关解释](https://pdos.csail.mit.edu/6.828/2012/lec/l-fs.txt) 
