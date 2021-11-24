@@ -33,6 +33,6 @@ while 从标准输入读取数据
 
 **参考**
 
-[深入 char * ,char ** ,char a[ \] ,char *a[] 内核_行人事，知天命-CSDN博客](https://blog.csdn.net/daiyutage/article/details/8604720)
+[深入 char * ,char ** ,char a[] ,char *a[] 内核_行人事，知天命-CSDN博客](https://blog.csdn.net/daiyutage/article/details/8604720)
 
 [MIT 6.S081 Lecture Notes | Xiao Fan (樊潇) (fanxiao.tech)](https://fanxiao.tech/posts/MIT-6S081-notes/)
