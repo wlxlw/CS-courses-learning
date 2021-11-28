@@ -18,7 +18,7 @@
    ret
     ```
 
-   trace的系统调用号SYS_trace需要补充在kernel/syscall.h中，`#define SYS_trace  22`。
+   trace的系统调用号SYS_trace需要**补充**在kernel/syscall.h中，`#define SYS_trace  22`。
 
 2. 内核**执行**trace系统调用的代码
 
@@ -154,5 +154,4 @@ trap包含四个步骤：
 4. 执行userret
    1. 将页表寄存器satp**从指向内核->到指向用户进程**
    2. 从trapframe中恢复用户寄存器的信息
-
 
