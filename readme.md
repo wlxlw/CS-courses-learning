@@ -9,7 +9,7 @@ xv6 handbook [xv6: a simple, Unix-like teaching operating system (mit.edu)](http
 实验进度：
 
 - [x] **Lab Utilities**
-- [ ] **Lab System calls**
+- [x] **Lab System calls**
 - [ ] **Lab Page tables**
 - [ ] **Lab Traps**
 - [ ] **Lab Copy on-write**
