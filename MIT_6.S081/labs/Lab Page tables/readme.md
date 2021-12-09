@@ -19,6 +19,8 @@
 
 物理地址(56位)      页号(44位) | 页内偏移(12位)
 
+页表项(64位)          保留位(10) |  物理页号(44位)  |  标记位(10位)
+
 **多级页表**
 
 RISC-V使用3级页表进行地址映射，并使用快表(TLB)加速地址转换速度。
@@ -56,4 +58,62 @@ I/O设备(例如磁盘)被映射到某个物理内存地址下(memory-mapped con
    used.)
 
    ​			每个用户进程都有自己的用户栈和内核栈，在用户进程运行用户程序	的时候，只有用户栈被使用；在用户进程进入内核后(通过系统调用或者	中断)，内核在内核栈中运行程序。
+
+# 代码：创建地址空间
+
+xv6管理地址空间和页表的核心数据结构是pagetable_t(kernem/vm.c)，其中有两个核心函数(虚拟地址到物理地址的映射采用**直接映射**)：
+
+1. walk函数，找到一个虚拟地址对应的页表项(PTE)
+
+   1. 地址转换相关的的宏
+
+   ```c
+   #define PXMASK          0x1FF // 9 bits
+   #define PXSHIFT(level)  (PGSHIFT+(9*(level)))
+   #define PX(level, va) ((((uint64) (va)) >> PXSHIFT(level)) & PXMASK)
+   //PX(2, va) 保留虚拟地址va页号的高9位
+   //PX(1, va) 保留虚拟地址va页号的中间9位
+   //PX(0, va) 保留虚拟地址va页号的低9位
+   #define PTE2PA(pte) (((pte) >> 10) << 12)
+   //页表项往右移10位获得物理页号，物理页号再左移12位获得该页*起始位置*的物理地址
+   #define PA2PTE(pa) ((((uint64)pa) >> 12) << 10)
+   #define PTE_V (1L << 0) // valid
+   ```
+
+   2. walk函数代码解释
+
+   ```c
+   pte_t *
+   walk(pagetable_t pagetable, uint64 va, int alloc)
+   {
+     if(va >= MAXVA)
+       panic("walk");
+     //找到虚拟地址va在多级页表对应的页表项
+     for(int level = 2; level > 0; level--) {
+       pte_t *pte = &pagetable[PX(level, va)];//获得当前层虚拟地址对应的页表项
+       if(*pte & PTE_V) {
+         pagetable = (pagetable_t)PTE2PA(*pte);//根据页表项获得对应物理页的起始地址
+       } else {//如果不存在
+         if(!alloc || (pagetable = (pde_t*)kalloc()) == 0)//没有空间可以分配返回0
+           return 0;
+         memset(pagetable, 0, PGSIZE);//为该页分配内存
+         *pte = PA2PTE(pagetable) | PTE_V;//修改页表项的物理地址以及有效位
+       }
+     }
+     return &pagetable[PX(0, va)];//
+   }
+   ```
+
+   
+
+2. mappages函数，将给定的虚拟地址映射到给定的物理地址，并创建页表项
+
+**内核页表如何创建**
+
+1. boot调用kvminit函数
+2. kvminit函数调用kvmmake函数
+3. kvmmake函数
+   1. 首先为内核的根页表分配一个物理页
+   2. 然后调用kvmmap生成虚拟地址到物理地址的映射，让内核能够知道指令以及数据所在的位置
+   3. kvmmap函数通过调用mappages函数来创建虚拟地址到物理地址之间的映射
 
