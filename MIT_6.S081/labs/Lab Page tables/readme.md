@@ -78,6 +78,8 @@ xv6管理地址空间和页表的核心数据结构是pagetable_t(kernem/vm.c)�
    //页表项往右移10位获得物理页号，物理页号再左移12位获得该页*起始位置*的物理地址
    #define PA2PTE(pa) ((((uint64)pa) >> 12) << 10)
    #define PTE_V (1L << 0) // valid
+   typedef uint64 pte_t; //pte_t为64位虚拟地址
+   typedef uint64* pagetable_t;
    ```
 
    2. walk函数代码解释
@@ -100,13 +102,54 @@ xv6管理地址空间和页表的核心数据结构是pagetable_t(kernem/vm.c)�
          *pte = PA2PTE(pagetable) | PTE_V;//修改页表项的物理地址以及有效位
        }
      }
-     return &pagetable[PX(0, va)];//
+     return &pagetable[PX(0, va)];//返回指向va对应页表项的指针
    }
    ```
 
    
 
-2. mappages函数，将给定的虚拟地址映射到给定的物理地址，并创建页表项
+2. mappages函数，将给定的虚拟地址段映射到给定的物理地址段(通过修改页表项)
+
+   1. 相关宏
+
+   ```c
+   #define PGSIZE 4096 // bytes per page
+   #define PGROUNDDOWN(a) (((a)) & ~(PGSIZE-1))
+   //PGSIZE-1 = 0xFFF
+   //PGROUNDDOWN(a) 返回虚拟/物理地址a所在页的起始地址
+   ```
+   2. mappages函数
+
+   ```c
+   // Create PTEs for virtual addresses starting at va that refer to
+   // physical addresses starting at pa. va and size might not
+   // be page-aligned. Returns 0 on success, -1 if walk() couldn't
+   // allocate a needed page-table page.
+   int
+   mappages(pagetable_t pagetable, uint64 va, uint64 size, uint64 pa, int perm)
+   {
+     uint64 a, last;
+     pte_t *pte;
+   
+     if(size == 0)
+       panic("mappages: size");
+   //将虚拟地址段[va,va+size-1]映射到物理地址段[pa,pa+size-1]
+     a = PGROUNDDOWN(va);//找到虚拟地址va对应虚拟页的起始地址
+     last = PGROUNDDOWN(va + size - 1);
+     for(;;){
+       if((pte = walk(pagetable, a, 1)) == 0)
+         return -1;
+       if(*pte & PTE_V)//对应页表项已经存在，不能重新映射到物理地址pa
+         panic("mappages: remap");
+       *pte = PA2PTE(pa) | perm | PTE_V;//修改页表项，完成地址映射
+       if(a == last)
+         break;
+       a += PGSIZE; //遍历下一页
+       pa += PGSIZE;
+     }
+     return 0;
+   }
+   ```
 
 **内核页表如何创建**
 
@@ -116,4 +159,58 @@ xv6管理地址空间和页表的核心数据结构是pagetable_t(kernem/vm.c)�
    1. 首先为内核的根页表分配一个物理页
    2. 然后调用kvmmap生成虚拟地址到物理地址的映射，让内核能够知道指令以及数据所在的位置
    3. kvmmap函数通过调用mappages函数来创建虚拟地址到物理地址之间的映射
+4. 调用kvminithart函数
+   1. 将根页表的物理地址写入satp寄存器
+   2. 清空TLB缓存
+
+# 物理内存分配
+
+xv6分配或者回收一页的内存，物理内存分配器采用free list数据结构来分配物理页。free list的每一个元素是一个run数据结构。物理内存分配器直接将每一个run数据结构保存在空闲的页中。
+
+```c
+struct run {
+  struct run *next;
+};
+
+struct {
+  struct spinlock lock;
+  struct run *freelist;
+} kmem;
+```
+
+**kinit函数初始化物理内存分配器**
+
+1. 生成lock
+
+2. 调用freerage函数为freelist分配物理页
+
+3. 调用kfree函数头插法创建空闲物理页链表
+
+   ```c
+   // Free the page of physical memory pointed at by v,
+   // which normally should have been returned by a
+   // call to kalloc().  (The exception is when
+   // initializing the allocator; see kinit above.)
+   void
+   kfree(void *pa)
+   {
+     struct run *r;
+   
+     if(((uint64)pa % PGSIZE) != 0 || (char*)pa < end || (uint64)pa >= PHYSTOP)
+       panic("kfree");
+   
+     // Fill with junk to catch dangling refs.
+     memset(pa, 1, PGSIZE);
+   //r指向物理地址pa, *r访问pa所在物理页
+     r = (struct run*)pa;
+   //kmem.freelist指向空闲物理页链表的头部
+   //头插法建立空闲物理页表
+     acquire(&kmem.lock);
+     r->next = kmem.freelist;
+     kmem.freelist = r;
+     release(&kmem.lock);
+   }
+   ```
+
+   
 
