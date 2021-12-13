@@ -98,15 +98,13 @@ xv6管理地址空间和页表的核心数据结构是pagetable_t(kernem/vm.c)�
        } else {//如果不存在
          if(!alloc || (pagetable = (pde_t*)kalloc()) == 0)//没有空间可以分配返回0
            return 0;
-         memset(pagetable, 0, PGSIZE);//为该页分配内存
+         memset(pagetable, 0, PGSIZE);//为页表本身分配内存
          *pte = PA2PTE(pagetable) | PTE_V;//修改页表项的物理地址以及有效位
        }
      }
      return &pagetable[PX(0, va)];//返回指向va对应页表项的指针
    }
    ```
-
-   
 
 2. mappages函数，将给定的虚拟地址段映射到给定的物理地址段(通过修改页表项)
 
@@ -167,7 +165,7 @@ xv6管理地址空间和页表的核心数据结构是pagetable_t(kernem/vm.c)�
 
 xv6分配或者回收一页的内存，物理内存分配器采用free list数据结构来分配物理页。free list的每一个元素是一个run数据结构。物理内存分配器直接将每一个run数据结构保存在空闲的页中。
 
-```c
+```cassandra
 struct run {
   struct run *next;
 };
@@ -212,5 +210,16 @@ struct {
    }
    ```
 
-   
+# 用户地址空间
 
+每个进程都有自己的页表，当xv6在各个进程之间切换时，同时也会切换页表。用户进程在向内核申请内存时，内核会修改用户进程页表的页表项
+
+**使用页表的优点**
+
+1. 不同的用户进程使用自己的页表，实现从虚拟地址到物理地址的转换。不同用户进程的内存空间得到隔离。
+2. 每个进程使用的虚拟地址空间都是连续的，虽然物理地址空间不一定连续。
+3. 内核页表与进程页表都在虚拟地址的最高地址处保留一个trampoline page
+
+**用户进程的栈**
+
+用户进程的栈在地址空间中占一页，在栈的下方防止一个guard page，当进程访问guard page时，则判断栈溢出
