@@ -52,7 +52,7 @@ freewalk(pagetable_t pagetable)
 
 # 实现
 
-再vm.c中补充vmprint函数和vmprint_walk函数
+在vm.c中补充vmprint函数和vmprint_walk函数
 
 ```c
 void vmprint_walk(pagetable_t pagetable,int d){
@@ -79,7 +79,7 @@ void vmprint(pagetable_t pagetable){
 }
 ```
 
-再def.h中补充
+在def.h中补充
 
 ```c
 void            vmprint_walk(pagetable_t,int);
