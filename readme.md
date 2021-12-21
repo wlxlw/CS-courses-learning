@@ -23,3 +23,8 @@ xv6 handbook [xv6: a simple, Unix-like teaching operating system (mit.edu)](http
 
 课程官网 [CS 144: Introduction to Computer Networking](https://cs144.github.io/)
 
+- [x] **Lab 0**
+- [x] **Lab 1  StreamReassembler**
+- [ ] **Lab 2 TCPReceiver**
+- [ ] **Lab 3 TCPSender**
+- [ ] **Lab 4 TCPConnection**
