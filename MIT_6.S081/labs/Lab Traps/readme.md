@@ -133,5 +133,7 @@ kernelvec：
 3. 恢复寄存器的值
 4. 执行sret，复制sepc到pc，以恢复到被中断的内核代码
 
+# Page-fault exceptions
 
+对任何异常，xv6直接kill掉产生异常的程序
 
