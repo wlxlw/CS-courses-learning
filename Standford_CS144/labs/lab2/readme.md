@@ -33,18 +33,29 @@ TCPReceiver需要告知发送方(sender)
 
 1. WrappingInt32 wrap(uint64 t n, WrappingInt32 isn)
 
-   将**absolute seqno** n转换成**seqno** isn。
+   将**absolute seqno** n转换成**seqno** isn
 
-2.  uint64 t unwrap(WrappingInt32 n, WrappingInt32 isn, uint64 t checkpoint)
+   ```
+   待补充
+   ```
 
-   将**seqno** isn转换成**absolute seqno** n。
+2. uint64 t unwrap(WrappingInt32 n, WrappingInt32 isn, uint64 t checkpoint)
 
-判题机制是比较标准输出和答案之间的区别，所以代码中不要有任何标准输出语句(cout,printf等)  搞得我代码写完半天不知道错在哪里
+      将**seqno** isn转换成**absolute seqno** n
+
+   ```
+   待补充
+   ```
 
 
+**判题机制是比较标准输出和答案之间的区别，所以代码中不要有任何标准输出语句(cout,printf等) **
+
+**给出的test cases似乎没有考虑编号溢出的情况？**
+
+设计test cases验证：待完成
 
 ```
-      if(checkpoint-ans>(MAX32/2) && ans+MAX32>checkpoint){ //这里必须要加ans+MAX32>checkpoint，不然在ans+MAX32溢出时，
+if(checkpoint-ans>(MAX32/2) && ans+MAX32>checkpoint){ //这里必须要加ans+MAX32>checkpoint，不然在ans+MAX32溢出时，
                                                             //ans+MAX32的到checkpoint的距离=checkpoint-(ans+MAX32)>ans到checkpoint之间的距离
                                                             //而不=(ans+MAX32)-checkpoint
 ```
