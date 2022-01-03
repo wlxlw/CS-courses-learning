@@ -35,28 +35,82 @@ TCPReceiver需要告知发送方(sender)
 
    将**absolute seqno** n转换成**seqno** isn
 
-   ```
-   待补充
+   ```c++
+   //! Transform an "absolute" 64-bit sequence number (zero-indexed) into a WrappingInt32
+   //! \param n The input absolute 64-bit sequence number
+   //! \param isn The initial sequence number
+   WrappingInt32 wrap(uint64_t n, WrappingInt32 isn) {
+       uint64_t MAX32 = uint64_t(1UL<<32); 
+       uint32_t ans_seqno = isn.raw_value();
+       n%=MAX32;
+       n = uint32_t(n);
+       ans_seqno = isn.raw_value()+n;
+       return WrappingInt32(ans_seqno);
+     
+   }
    ```
 
 2. uint64 t unwrap(WrappingInt32 n, WrappingInt32 isn, uint64 t checkpoint)
 
       将**seqno** isn转换成**absolute seqno** n
 
-   ```
-   待补充
-   ```
+      ```c++
+      uint64_t unwrap(WrappingInt32 n, WrappingInt32 isn, uint64_t checkpoint) {
+          uint64_t MAX32 = uint64_t(1ul<<32); //MAX32等于2的32次方
+          uint64_t ans = n.raw_value()-isn.raw_value();//字节流首尾32位seqno的间距
+          if(checkpoint>ans){
+            uint64_t num = (checkpoint-ans)/MAX32;
+            ans = ans + num * MAX32;
+            if(checkpoint-ans>(MAX32/2) && ans+MAX32>checkpoint){//处理上溢出
+              ans = ans + MAX32;
+            } 
+          }   
+          else{
+            uint64_t num = (ans-checkpoint)/MAX32;
+            ans = ans - MAX32*num;
+            if(ans-checkpoint>(MAX32/2)&&ans-MAX32<checkpoint){//处理下溢出
+              ans = ans - MAX32;
+            }
+          }
+          return ans;
+      }
+      ```
 
 
-**判题机制是比较标准输出和答案之间的区别，所以代码中不要有任何标准输出语句(cout,printf等) **
+### **判题机制是比较标准输出和答案之间的区别，所以代码中不要有任何标准输出语句(cout,printf等) **
 
-**给出的test cases似乎没有考虑编号溢出的情况？**
+### **给出的test cases似乎没有考虑编号溢出的情况？**
 
-设计test cases验证：待完成
+#### **test case 1：**测试unwrap函数计算与checkpoint距离最近的点时，**上溢出**的问题(lab中没有给出此类测试点)
 
+```c++
+uint64 t unwrap(WrappingInt32 n, WrappingInt32 isn, uint64 t checkpoint)
+//TEST CASE 1
+WrappingInt32 n(0xffffffff);
+WrappingInt32 isn(0xf0000001);
+uint64_t checkpoint = 0xffffffffffffffff;
+
+//在计算与checkpoint最近的点时，需要从
+//序号A(0xffffffff0ffffffe)与序号B(0xf0000001)中选择
+//序号A与checkpoint距离的计算方式是 距离=checkpoint-待定点A
+//序号B与checkpoint距离的计算方式是 距离=待定点-checkpointB
+//距离计算方式的错误会导致错误的结果
 ```
-if(checkpoint-ans>(MAX32/2) && ans+MAX32>checkpoint){ //这里必须要加ans+MAX32>checkpoint，不然在ans+MAX32溢出时，
-                                                            //ans+MAX32的到checkpoint的距离=checkpoint-(ans+MAX32)>ans到checkpoint之间的距离
-                                                            //而不=(ans+MAX32)-checkpoint
-```
 
+#### **test case 2：**测试unwrap函数计算与checkpoint距离最近的点时，**下溢出**的问题(lab中给出了此类测试点)
+
+```c++
+uint64 t unwrap(WrappingInt32 n, WrappingInt32 isn, uint64 t checkpoint)
+//TEST CASE 2
+WrappingInt32 n(0xffffffff-1);
+WrappingInt32 isn(0x0);
+uint64_t checkpoint = 0x0;
+
+//在计算与checkpoint最近的点时，需要从
+//序号A(0xfffffffe)与序号B(0xfffffffffffffffe)中选择
+//序号A与checkpoint距离的计算方式是 距离d1=待定点A-checkpoint
+//序号B与checkpoint距离的计算方式是 距离d2=待定点B-checkpointB
+//虽然距离计算方式没有变化，如果代码通过以下方式从A B中选择，会出错：
+//    if(距离d1大于2^31)
+//	     选点B
+```
