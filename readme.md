@@ -25,7 +25,7 @@ xv6 handbook [xv6: a simple, Unix-like teaching operating system (mit.edu)](http
 
 - [x] **Lab 0 Warm up**
 - [x] **Lab 1 StreamReassembler**
-- [ ] **Lab 2 TCPReceiver**
+- [x] **Lab 2 TCPReceiver**
 - [ ] **Lab 3 TCPSender**
 - [ ] **Lab 4 TCPConnection**
 
